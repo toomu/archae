@@ -1215,7 +1215,7 @@ class ArchaeInstaller {
 
             const moduleName = moduleNames[index];
 
-
+            console.log("install starting " + moduleName);
             const _ensureNodeModules = (module, moduleName) => new Promise((accept, reject) => {
                 console.log(module, moduleName) //kamal
                 mkdirp(path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules'), err => {
@@ -1228,6 +1228,7 @@ class ArchaeInstaller {
                 });
             });
             const _install = (module, moduleName) => new Promise((accept, reject) => {
+              console.log("inside _install" + moduleName);
                 const modulePath = (() => {
                     if (path.isAbsolute(module)) {
                         return 'file:' + path.join(dirname, module);
@@ -1251,14 +1252,17 @@ class ArchaeInstaller {
                     if (code === 0) {
                         accept();
                     } else {
+                        console.log([moduleName, "exit in npmInstall", code]);
                         reject(new Error('npm install error: ' + code));
                     }
                 });
                 npmInstall.on('error', err => {
+                  console.log([moduleName, "error in npmInstall", err]);
                     reject(err);
                 });
             });
             const _build = (module, moduleName) => {
+                console.log("inside _build" + moduleName);
                 const _buildClient = () => new Promise((accept, reject) => {
                     pather.getPluginClient(moduleName, (err, clientFileName) => {
                         if (!err) {
