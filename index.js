@@ -1215,7 +1215,7 @@ class ArchaeInstaller {
 
             const moduleName = moduleNames[index];
 
-            console.log("install starting " + moduleName);
+            console.log(index, "install starting " + moduleName);
             const _ensureNodeModules = (module, moduleName) => new Promise((accept, reject) => {
                 console.log(module, moduleName) //kamal
                 mkdirp(path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules'), err => {
@@ -1228,7 +1228,7 @@ class ArchaeInstaller {
                 });
             });
             const _install = (module, moduleName) => new Promise((accept, reject) => {
-              console.log("inside _install" + moduleName);
+              // console.log(index, "inside _install" + moduleName);
                 const modulePath = (() => {
                     if (path.isAbsolute(module)) {
                         return 'file:' + path.join(dirname, module);
@@ -1250,22 +1250,24 @@ class ArchaeInstaller {
                 npmInstall.stderr.pipe(process.stderr);
                 npmInstall.on('exit', code => {
                     if (code === 0) {
+                        // console.log([index, moduleName,  "exit in npmInstall code is 0" ]);
                         accept();
                     } else {
-                        console.log([moduleName, "exit in npmInstall", code]);
+                        // console.log([index, moduleName,  "exit in npmInstall", code]);
                         reject(new Error('npm install error: ' + code));
                     }
                 });
                 npmInstall.on('error', err => {
-                  console.log([moduleName, "error in npmInstall", err]);
+                  // console.log([index, moduleName,  "error in npmInstall", err]);
                     reject(err);
                 });
             });
             const _build = (module, moduleName) => {
-                console.log("inside _build" + moduleName);
+                // console.log(index, "inside _build" + moduleName);
                 const _buildClient = () => new Promise((accept, reject) => {
                     pather.getPluginClient(moduleName, (err, clientFileName) => {
                         if (!err) {
+                            // console.log([index, moduleName,  "inside getPluginClient", clientFileName]);
                             if (typeof clientFileName === 'string') {
                                 const srcPath = path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules', moduleName, clientFileName);
                                 const dstPath = path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules', moduleName, '.archae', 'client.js');
@@ -1283,13 +1285,16 @@ class ArchaeInstaller {
                     });
                 });
                 const _buildBuilds = () => new Promise((accept, reject) => {
+                    // console.log([index, moduleName,  "inside buildBuilds"]);
                     pather.getPluginBuilds(moduleName, (err, buildFileNames) => {
+                        // console.log([index, moduleName,  "inside getPluginBuilds", buildFileNames]);
                         if (!err) {
                             if (Array.isArray(buildFileNames)) {
                                 Promise.all(buildFileNames.map(buildFileName => {
                                     const srcPath = path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules', moduleName, buildFileName);
                                     const dstPath = path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules', moduleName, '.archae', 'build', buildFileName);
 
+                                    console.log(index, moduleName, "inside getPluginBuilds")
                                     return _requestRollup(srcPath)
                                         .then(code => _writeFile(dstPath, code))
                                         .then(accept)
