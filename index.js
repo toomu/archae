@@ -1312,7 +1312,7 @@ class ArchaeInstaller {
                 .then(() => _install(module, moduleName))
                 .then(() => _build(module, moduleName));
             // }, 20)
-              }, {concurrency: 5})
+              }, {concurrency: 10})
       // }))
         .then(() => {
           cb();
