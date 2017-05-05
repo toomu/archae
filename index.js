@@ -1169,7 +1169,7 @@ class ArchaeInstaller {
 
 
 
-      // var bbPromise = require('bluebird');
+      var bbPromise = require('bluebird');
 
 
       function pMap(array, fn, limit) {
@@ -1209,112 +1209,111 @@ class ArchaeInstaller {
       const _npmInstall = (modules, moduleNames, cb) => {
 
         console.log(moduleNames.length, modules.length);
-        pMap(modules, (module, index) => {
-        const moduleName = moduleNames[index];
+        // Promise.all(modules.map((module, index) => {
+        // pMap(modules, (module, index) => {
+        bbPromise.map(modules, (module, index) => {
+
+            const moduleName = moduleNames[index];
 
 
-
-
-
-        const _ensureNodeModules = (module, moduleName) => new Promise((accept, reject) => {
-          console.log(module, moduleName) //kamal
-          mkdirp(path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules'), err => {
-            if (!err) {
-              console.log("fu");
-              console.log(err);
-              accept();
-            } else {
-              console.log("fu");
-              console.log(err);
-              reject(err);
-            }
-          });
-        });
-        const _install = (module, moduleName) => new Promise((accept, reject) => {
-          const modulePath = (() => {
-            if (path.isAbsolute(module)) {
-              return 'file:' + path.join(dirname, module);
-            } else {
-              return module;
-            }
-          })();
-          const npmInstall = child_process.spawn(
-            npmCommands.install[0],
-            npmCommands.install.slice(1).concat([
-              '--cache-folder', path.join(dirname, installDirectory, 'caches', moduleName),
-              modulePath,
-            ]),
-            {
-              cwd: path.join(dirname, installDirectory, 'plugins', moduleName),
-            }
-          );
-          npmInstall.stdout.pipe(process.stdout);
-          npmInstall.stderr.pipe(process.stderr);
-          npmInstall.on('exit', code => {
-            if (code === 0) {
-              accept();
-            } else {
-              reject(new Error('npm install error: ' + code));
-            }
-          });
-          npmInstall.on('error', err => {
-            reject(err);
-          });
-        });
-        const _build = (module, moduleName) => {
-          const _buildClient = () => new Promise((accept, reject) => {
-            pather.getPluginClient(moduleName, (err, clientFileName) => {
-              if (!err) {
-                if (typeof clientFileName === 'string') {
-                  const srcPath = path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules', moduleName, clientFileName);
-                  const dstPath = path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules', moduleName, '.archae', 'client.js');
-
-                  return _requestRollup(srcPath)
-                    .then(code => _writeFile(dstPath, code))
-                    .then(accept)
-                    .catch(reject);
-                } else {
-                  accept();
-                }
-              } else {
-                reject(err);
-              }
+            const _ensureNodeModules = (module, moduleName) => new Promise((accept, reject) => {
+                console.log(module, moduleName) //kamal
+                mkdirp(path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules'), err => {
+                    if (!err) {
+                        accept();
+                    } else {
+                        console.log("err" , err);
+                        reject(err);
+                    }
+                });
             });
-          });
-          const _buildBuilds = () => new Promise((accept, reject) => {
-            pather.getPluginBuilds(moduleName, (err, buildFileNames) => {
-              if (!err) {
-                if (Array.isArray(buildFileNames)) {
-                  Promise.all(buildFileNames.map(buildFileName => {
-                    const srcPath = path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules', moduleName, buildFileName);
-                    const dstPath = path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules', moduleName, '.archae', 'build', buildFileName);
-
-                    return _requestRollup(srcPath)
-                      .then(code => _writeFile(dstPath, code))
-                      .then(accept)
-                      .catch(reject);
-                  }))
-                    .then(accept)
-                    .catch(reject);
-                } else {
-                  accept();
-                }
-              } else {
-                reject(err);
-              }
+            const _install = (module, moduleName) => new Promise((accept, reject) => {
+                const modulePath = (() => {
+                    if (path.isAbsolute(module)) {
+                        return 'file:' + path.join(dirname, module);
+                    } else {
+                        return module;
+                    }
+                })();
+                const npmInstall = child_process.spawn(
+                    npmCommands.install[0],
+                    npmCommands.install.slice(1).concat([
+                        '--cache-folder', path.join(dirname, installDirectory, 'caches', moduleName),
+                        modulePath,
+                    ]),
+                    {
+                        cwd: path.join(dirname, installDirectory, 'plugins', moduleName),
+                    }
+                );
+                npmInstall.stdout.pipe(process.stdout);
+                npmInstall.stderr.pipe(process.stderr);
+                npmInstall.on('exit', code => {
+                    if (code === 0) {
+                        accept();
+                    } else {
+                        reject(new Error('npm install error: ' + code));
+                    }
+                });
+                npmInstall.on('error', err => {
+                    reject(err);
+                });
             });
-          });
+            const _build = (module, moduleName) => {
+                const _buildClient = () => new Promise((accept, reject) => {
+                    pather.getPluginClient(moduleName, (err, clientFileName) => {
+                        if (!err) {
+                            if (typeof clientFileName === 'string') {
+                                const srcPath = path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules', moduleName, clientFileName);
+                                const dstPath = path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules', moduleName, '.archae', 'client.js');
 
-          return Promise.all([
-            _buildClient(),
-            _buildBuilds(),
-          ]);
-        };
+                                return _requestRollup(srcPath)
+                                    .then(code => _writeFile(dstPath, code))
+                                    .then(accept)
+                                    .catch(reject);
+                            } else {
+                                accept();
+                            }
+                        } else {
+                            reject(err);
+                        }
+                    });
+                });
+                const _buildBuilds = () => new Promise((accept, reject) => {
+                    pather.getPluginBuilds(moduleName, (err, buildFileNames) => {
+                        if (!err) {
+                            if (Array.isArray(buildFileNames)) {
+                                Promise.all(buildFileNames.map(buildFileName => {
+                                    const srcPath = path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules', moduleName, buildFileName);
+                                    const dstPath = path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules', moduleName, '.archae', 'build', buildFileName);
 
-        return _ensureNodeModules(module, moduleName)
-          .then(() => _install(module, moduleName))
-          .then(() => _build(module, moduleName));
-      }, 20)
+                                    return _requestRollup(srcPath)
+                                        .then(code => _writeFile(dstPath, code))
+                                        .then(accept)
+                                        .catch(reject);
+                                }))
+                                    .then(accept)
+                                    .catch(reject);
+                            } else {
+                                accept();
+                            }
+                        } else {
+                            reject(err);
+                        }
+                    });
+                });
+
+                return Promise.all([
+                    _buildClient(),
+                    _buildBuilds(),
+                ]);
+            };
+
+            return _ensureNodeModules(module, moduleName)
+                .then(() => _install(module, moduleName))
+                .then(() => _build(module, moduleName));
+            // }, 20)
+          }, {concurrency: 20})
+      // }))
         .then(() => {
           cb();
         })
