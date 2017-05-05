@@ -1207,11 +1207,13 @@ class ArchaeInstaller {
 
 
       const _npmInstall = (modules, moduleNames, cb) => {
-          pMap(modules, (module, index) => {
+
+        console.log(moduleNames.length, modules.length);
+        pMap(modules, (module, index) => {
         const moduleName = moduleNames[index];
 
 
-        console.log(moduleNames.length);
+
 
 
         const _ensureNodeModules = (module, moduleName) => new Promise((accept, reject) => {
@@ -1312,7 +1314,7 @@ class ArchaeInstaller {
         return _ensureNodeModules(module, moduleName)
           .then(() => _install(module, moduleName))
           .then(() => _build(module, moduleName));
-      }), 20
+      }, 20)
         .then(() => {
           cb();
         })
