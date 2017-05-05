@@ -1162,11 +1162,56 @@ class ArchaeInstaller {
           });
       }
     };
-    const _npmInstall = (modules, moduleNames, cb) => {
-      Promise.all(modules.map((module, index) => {
+
+
+
+
+
+
+
+      // var bbPromise = require('bluebird');
+
+
+      function pMap(array, fn, limit) {
+          return new Promise(function(resolve, reject) {
+              var index = 0, cnt = 0, stop = false, results = new Array(array.length);
+
+              function run() {
+                  while (!stop && index < array.length && cnt < limit) {
+                      (function(i) {
+                          ++cnt;
+                          ++index;
+                          fn(array[i]).then(function(data) {
+                              results[i] = data;
+                              --cnt;
+                              // see if we are done or should run more requests
+                              if (cnt === 0 && index === array.length) {
+                                  resolve(results);
+                              } else {
+                                  run();
+                              }
+                          }, function(err) {
+                              // set stop flag so no more requests will be sent
+                              stop = true;
+                              --cnt;
+                              reject(err);
+                          });
+                      })(index);
+                  }
+              }
+              run();
+          });
+      }
+
+
+
+
+      const _npmInstall = (modules, moduleNames, cb) => {
+          pMap(modules, (module, index) => {
         const moduleName = moduleNames[index];
 
 
+        console.log(moduleNames.length);
 
 
         const _ensureNodeModules = (module, moduleName) => new Promise((accept, reject) => {
@@ -1267,7 +1312,7 @@ class ArchaeInstaller {
         return _ensureNodeModules(module, moduleName)
           .then(() => _install(module, moduleName))
           .then(() => _build(module, moduleName));
-      }))
+      }), 20
         .then(() => {
           cb();
         })
@@ -1275,6 +1320,22 @@ class ArchaeInstaller {
           cb(err);
         });
     };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     const _markInstalledModules = (moduleNames, cb) => {
       Promise.all(moduleNames.map(moduleName => _writeFile(_getInstalledFlagFilePath(moduleName))))
         .then(() => {
