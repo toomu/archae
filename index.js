@@ -1166,11 +1166,15 @@ class ArchaeInstaller {
       Promise.all(modules.map((module, index) => {
         const moduleName = moduleNames[index];
 
+
+
+
         const _ensureNodeModules = (module, moduleName) => new Promise((accept, reject) => {
           console.log(module, moduleName) //kamal
           mkdirp(path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules'), err => {
             if (!err) {
-
+              console.log("fu");
+              console.log(err);
               accept();
             } else {
               console.log("fu");
