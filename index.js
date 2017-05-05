@@ -1170,8 +1170,11 @@ class ArchaeInstaller {
           console.log(module, moduleName) //kamal
           mkdirp(path.join(dirname, installDirectory, 'plugins', moduleName, 'node_modules'), err => {
             if (!err) {
+
               accept();
             } else {
+              console.log("fu");
+              console.log(err);
               reject(err);
             }
           });
