@@ -45,6 +45,7 @@ const nameSymbol = Symbol();
 
 class ArchaeServer extends EventEmitter {
   constructor({
+    dirname,
     hostname,
     host,
     port,
@@ -65,6 +66,9 @@ class ArchaeServer extends EventEmitter {
     staticSite,
   } = {}) {
     super();
+
+    dirname = dirname || process.cwd();
+    this.dirname = dirname;
 
     hostname = hostname || defaultConfig.hostname;
     this.hostname = hostname;
@@ -134,10 +138,14 @@ class ArchaeServer extends EventEmitter {
     this.installsMutex = new MultiMutex();
     this.loadsMutex = new MultiMutex();
     this.mountsMutex = new MultiMutex();
+
+
+    console.log("this");
+      // console.log(this);
   }
 
   loadCerts() {
-    const {hostname, cryptoDirectory, generateCerts} = this;
+    const {dirname, hostname, cryptoDirectory, generateCerts} = this;
 
     const _getOldCerts = () => {
       const _getCertFile = fileName => {
@@ -250,23 +258,29 @@ class ArchaeServer extends EventEmitter {
           reject(err);
         }
       };
-
+        console.log(7)
       const _lockPlugins = (mutex, pluginNames) => Promise.all(pluginNames.map(pluginName => mutex.lock(pluginName)))
         .then(unlocks => Promise.resolve(() => {
+          console.log(8);
           for (let i = 0; i < unlocks.length; i++) {
             const unlock = unlocks[i];
             unlock();
           }
         }));
+        console.log(9);
 
       this.getModuleRealNames(plugins)
         .then(pluginNames => {
+            console.log(6)
           _lockPlugins(this.installsMutex, pluginNames)
             .then(unlock => {
+                console.log(5)
               installer.addModules(plugins, pluginNames, force, err => {
                 if (!err) {
+                  console.log(1)
                   cb(null, pluginNames);
                 } else {
+                    console.log(2)
                   cb(err);
                 }
 
@@ -274,10 +288,12 @@ class ArchaeServer extends EventEmitter {
               });
             })
             .catch(err => {
+                console.log(3)
               cb(err);
             });
         })
         .catch(err => {
+            console.log(4)
           cb(err);
         });
     });
@@ -458,7 +474,7 @@ class ArchaeServer extends EventEmitter {
       pather.getPackageJsonFileName(pluginName, 'server', (err, fileName) => {
         if (!err) {
           if (fileName) {
-            const {installDirectory} = this;
+            const {dirname, installDirectory} = this;
             const modulePath = path.join( installDirectory, 'plugins', pluginName, 'node_modules', pluginName, fileName);
             const moduleInstance = require(modulePath);
 
@@ -483,8 +499,8 @@ class ArchaeServer extends EventEmitter {
     if (this.watchers[plugin] === undefined) {
       const watcher = (() => {
         if (hotload && /^\//.test(plugin)) {
-          // const {dirname} = this;
-          const moduleDirectoryPath = plugin;
+          const {dirname} = this;
+          const moduleDirectoryPath = path.join(dirname, plugin);
           const watcher = new watchr.Watcher(moduleDirectoryPath);
           watcher.setConfig({
             catchupDelay: 100,
@@ -638,7 +654,7 @@ class ArchaeServer extends EventEmitter {
       server: this.server,
       app: this.app,
       wss: this.wss,
-      // dirname: this.dirname,
+      dirname: this.dirname,
       dataDirectory: this.dataDirectory,
     };
   }
@@ -652,7 +668,7 @@ class ArchaeServer extends EventEmitter {
   }
 
   mountApp() {
-    const {hostname, publicDirectory, installDirectory, metadata, server, app, wss, cors, corsOrigin, staticSite, pather} = this;
+    const {hostname, dirname, publicDirectory, installDirectory, metadata, server, app, wss, cors, corsOrigin, staticSite, pather} = this;
 
     // cross-origin resoure sharing
     if (cors) {
@@ -1031,11 +1047,13 @@ class ArchaeServer extends EventEmitter {
 }
 
 class ArchaePather {
-  constructor(installDirectory) {
+  constructor(dirname, installDirectory) {
+    this.dirname = dirname;
     this.installDirectory = installDirectory;
   }
 
   getModuleRealName(module, cb) {
+    console.log(path.isAbsolute(module), module);
     if (path.isAbsolute(module)) {
       fs.readFile(this.getLocalModulePackageJsonPath(module), 'utf8', (err, s) => {
         if (!err) {
@@ -1062,13 +1080,13 @@ class ArchaePather {
   }
 
   getInstalledModulePath(moduleName) {
-    const { installDirectory} = this;
-    return path.join(installDirectory, 'plugins', moduleName, 'node_modules', moduleName);
+    const {dirname, installDirectory} = this;
+    return path.join( installDirectory, 'plugins', moduleName, 'node_modules', moduleName);
   }
 
   getLocalModulePath(module) {
-    // const {dirname} = this;
-    return module;
+    const {dirname} = this;
+    return path.join(dirname, module);
   }
 
   getInstalledModulePackageJsonPath(moduleName) {
@@ -1080,7 +1098,7 @@ class ArchaePather {
   }
 
   getPackageJsonFileName(plugin, packageJsonFileNameKey, cb) {
-    const {installDirectory} = this;
+    const {dirname, installDirectory} = this;
 
     fs.readFile(this.getInstalledModulePackageJsonPath(plugin), 'utf8', (err, s) => {
       if (!err) {
@@ -1103,7 +1121,8 @@ class ArchaePather {
 }
 
 class ArchaeInstaller {
-  constructor(installDirectory, pather) {
+  constructor(dirname, installDirectory, pather) {
+    this.dirname = dirname;
     this.installDirectory = installDirectory;
     this.pather = pather;
 
@@ -1112,7 +1131,7 @@ class ArchaeInstaller {
   }
 
   addModules(modules, moduleNames, force, cb) {
-    const {installDirectory, pather} = this;
+    const {dirname, installDirectory, pather} = this;
 
     const _getInstalledFlagFilePath = moduleName => path.join(installDirectory, 'plugins', moduleName, 'node_modules', moduleName, '.archae', 'installed.txt');
     const _writeFile = (p, d) => new Promise((accept, reject) => {
@@ -1225,7 +1244,7 @@ class ArchaeInstaller {
               // console.log(index, "inside _install" + moduleName);
                 const modulePath = (() => {
                     if (path.isAbsolute(module)) {
-                        return 'file:' + module;
+                        return 'file:' + path.join(dirname, module);
                     } else {
                         return module;
                     }
