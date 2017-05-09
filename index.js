@@ -140,8 +140,6 @@ class ArchaeServer extends EventEmitter {
     this.mountsMutex = new MultiMutex();
 
 
-    console.log("this");
-      // console.log(this);
   }
 
   loadCerts() {
@@ -258,29 +256,22 @@ class ArchaeServer extends EventEmitter {
           reject(err);
         }
       };
-        console.log(7)
       const _lockPlugins = (mutex, pluginNames) => Promise.all(pluginNames.map(pluginName => mutex.lock(pluginName)))
         .then(unlocks => Promise.resolve(() => {
-          console.log(8);
           for (let i = 0; i < unlocks.length; i++) {
             const unlock = unlocks[i];
             unlock();
           }
         }));
-        console.log(9);
 
       this.getModuleRealNames(plugins)
         .then(pluginNames => {
-            console.log(6)
           _lockPlugins(this.installsMutex, pluginNames)
             .then(unlock => {
-                console.log(5)
               installer.addModules(plugins, pluginNames, force, err => {
                 if (!err) {
-                  console.log(1)
                   cb(null, pluginNames);
                 } else {
-                    console.log(2)
                   cb(err);
                 }
 
@@ -288,12 +279,10 @@ class ArchaeServer extends EventEmitter {
               });
             })
             .catch(err => {
-                console.log(3)
               cb(err);
             });
         })
         .catch(err => {
-            console.log(4)
           cb(err);
         });
     });
@@ -1221,16 +1210,13 @@ class ArchaeInstaller {
 
       const _npmInstall = (modules, moduleNames, cb) => {
 
-        console.log(moduleNames.length, modules.length);
         // Promise.all(modules.map((module, index) => {
         // pMap(modules, (module, index) => {
         bbPromise.map(modules, (module, index) => {
 
             const moduleName = moduleNames[index];
 
-            console.log(index, "install starting " + moduleName);
             const _ensureNodeModules = (module, moduleName) => new Promise((accept, reject) => {
-                console.log(module, moduleName) //kamal
                 mkdirp(path.join( installDirectory, 'plugins', moduleName, 'node_modules'), err => {
                     if (!err) {
                         accept();
