@@ -124,9 +124,9 @@ class ArchaeServer extends EventEmitter {
 
     this.publicBundlePromise = null;
 
-    const pather = new ArchaePather(installDirectory);
+    const pather = new ArchaePather(dirname, installDirectory);
     this.pather = pather;
-    const installer = new ArchaeInstaller(installDirectory, pather);
+    const installer = new ArchaeInstaller(dirname, installDirectory, pather);
     this.installer = installer;
 
     this.connections = [];
@@ -965,7 +965,7 @@ class ArchaeServer extends EventEmitter {
 
   listen(cb) {
     const _ensurePublicBundlePromise = () => {
-      this.publicBundlePromise = _requestRollup(path.join( 'lib', 'archae.js'))
+      this.publicBundlePromise = _requestRollup(path.join(__dirname, 'lib', 'archae.js'))
         .then(codeString => {
           const codeObject = new String(codeString);
           codeObject.etag = etag(codeString);
