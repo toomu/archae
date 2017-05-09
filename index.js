@@ -684,7 +684,7 @@ class ArchaeServer extends EventEmitter {
 
     // user public
     if (publicDirectory) {
-      app.use('/', express.static(publicDirectory));
+      app.use('/', express.static(path.join("/",publicDirectory)));
     }
 
     class UpgradeEvent {
