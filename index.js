@@ -1227,7 +1227,6 @@ class ArchaeInstaller {
                 });
             });
             const _install = (module, moduleName) => new Promise((accept, reject) => {
-              // console.log(index, "inside _install" + moduleName);
                 const modulePath = (() => {
                     if (path.isAbsolute(module)) {
                         return 'file:' + path.join(dirname, module);
@@ -1249,20 +1248,16 @@ class ArchaeInstaller {
                 npmInstall.stderr.pipe(process.stderr);
                 npmInstall.on('exit', code => {
                     if (code === 0) {
-                        // console.log([index, moduleName,  "exit in npmInstall code is 0" ]);
                         accept();
                     } else {
-                        // console.log([index, moduleName,  "exit in npmInstall", code]);
                         reject(new Error('npm install error: ' + code));
                     }
                 });
                 npmInstall.on('error', err => {
-                  // console.log([index, moduleName,  "error in npmInstall", err]);
                     reject(err);
                 });
             });
             const _build = (module, moduleName) => {
-                // console.log(index, "inside _build" + moduleName);
                 const _buildClient = () => new Promise((accept, reject) => {
                     pather.getPluginClient(moduleName, (err, clientFileName) => {
                         if (!err) {
@@ -1293,7 +1288,6 @@ class ArchaeInstaller {
                                     const srcPath = path.join(installDirectory, 'plugins', moduleName, 'node_modules', moduleName, buildFileName);
                                     const dstPath = path.join( installDirectory, 'plugins', moduleName, 'node_modules', moduleName, '.archae', 'build', buildFileName);
 
-                                    console.log(index, moduleName, "inside getPluginBuilds")
                                     return _requestRollup(srcPath)
                                         .then(code => _writeFile(dstPath, code))
                                         .then(accept)
